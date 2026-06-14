@@ -7,6 +7,7 @@ import type { TabModel } from "@/app/store/tab-model";
 import { makeORef } from "@/app/store/wos";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { SecretsContent } from "@/app/view/waveconfig/secretscontent";
+import { SettingsContent } from "@/app/view/waveconfig/settings-ui/settingscontent";
 import { WaveConfigView } from "@/app/view/waveconfig/waveconfig";
 import type { WaveConfigEnv } from "@/app/view/waveconfig/waveconfigenv";
 import { base64ToString, stringToBase64 } from "@/util/util";
@@ -63,6 +64,7 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             language: "json",
             docsUrl: "https://docs.waveterm.dev/config",
             hasJsonView: true,
+            visualComponent: SettingsContent,
         },
         {
             name: "Connections",
@@ -147,6 +149,9 @@ export class WaveConfigViewModel implements ViewModel {
     isMenuOpenAtom: PrimitiveAtom<boolean>;
     presetsJsonExistsAtom: PrimitiveAtom<boolean>;
     activeTabAtom: PrimitiveAtom<"visual" | "json">;
+    settingsCategoryAtom: PrimitiveAtom<string>;
+    settingsSearchAtom: PrimitiveAtom<string>;
+    settingsDefaultsAtom: PrimitiveAtom<Record<string, any>>;
     configErrorFilesAtom: Atom<Set<string>>;
     configDir: string;
     saveShortcut: string;
@@ -182,6 +187,9 @@ export class WaveConfigViewModel implements ViewModel {
         this.isMenuOpenAtom = atom(false);
         this.presetsJsonExistsAtom = atom(false);
         this.activeTabAtom = atom<"visual" | "json">("visual");
+        this.settingsCategoryAtom = atom("app");
+        this.settingsSearchAtom = atom("");
+        this.settingsDefaultsAtom = atom<Record<string, any>>({});
         this.configErrorFilesAtom = atom((get) => {
             const fullConfig = get(this.env.atoms.fullConfigAtom);
             const errorSet = new Set<string>();
@@ -202,6 +210,7 @@ export class WaveConfigViewModel implements ViewModel {
         this.storageBackendErrorAtom = atom<string | null>(null) as PrimitiveAtom<string | null>;
 
         this.checkPresetsJsonExists();
+        this.loadSettingsDefaults();
         this.initialize();
     }
 
@@ -406,6 +415,30 @@ export class WaveConfigViewModel implements ViewModel {
 
     clearValidationError() {
         globalStore.set(this.validationErrorAtom, null);
+    }
+
+    async loadSettingsDefaults() {
+        try {
+            const defaults = await this.env.rpc.GetDefaultConfigCommand(TabRpcClient);
+            globalStore.set(this.settingsDefaultsAtom, defaults ?? {});
+        } catch (err) {
+            globalStore.set(this.errorMessageAtom, `Failed to load default settings: ${err.message || String(err)}`);
+        }
+    }
+
+    async setSetting(key: string, value: any) {
+        try {
+            await this.env.rpc.SetConfigCommand(TabRpcClient, { [key]: value });
+        } catch (err) {
+            globalStore.set(this.errorMessageAtom, `Failed to set ${key}: ${err.message || String(err)}`);
+        }
+    }
+
+    async resetSetting(key: string) {
+        const defaults = globalStore.get(this.settingsDefaultsAtom);
+        // Writing null deletes the user override; the resolved value falls back to the default.
+        const resetValue = key in defaults ? defaults[key] : null;
+        await this.setSetting(key, resetValue);
     }
 
     async checkStorageBackend() {

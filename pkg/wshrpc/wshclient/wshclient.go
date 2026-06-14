@@ -418,6 +418,12 @@ func GetBuilderStatusCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpt
 	return resp, err
 }
 
+// command "getdefaultconfig", wshserver.GetDefaultConfigCommand
+func GetDefaultConfigCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (waveobj.MetaMapType, error) {
+	resp, err := sendRpcRequestCallHelper[waveobj.MetaMapType](w, "getdefaultconfig", nil, opts)
+	return resp, err
+}
+
 // command "getfocusedblockdata", wshserver.GetFocusedBlockDataCommand
 func GetFocusedBlockDataCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (*wshrpc.FocusedBlockData, error) {
 	resp, err := sendRpcRequestCallHelper[*wshrpc.FocusedBlockData](w, "getfocusedblockdata", nil, opts)
