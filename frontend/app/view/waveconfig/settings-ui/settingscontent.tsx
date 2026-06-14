@@ -1,7 +1,6 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { modalsModel } from "@/app/store/modalmodel";
 import type { WaveConfigViewModel } from "@/app/view/waveconfig/waveconfig-model";
 import { useWaveEnv } from "@/app/waveenv/waveenv";
 import type { WaveConfigEnv } from "@/app/view/waveconfig/waveconfigenv";
@@ -23,56 +22,6 @@ import settingsSchema from "../../../../../schema/settings.json";
 const SCHEMA_PROPS = (settingsSchema as any).$defs.SettingsType.properties as SchemaProps;
 const ALL_DESCRIPTORS = buildDescriptors(SCHEMA_PROPS, SettingsOverlay);
 const GROUPS = groupByCategory(ALL_DESCRIPTORS);
-
-const ABOUT_CATEGORY = "about";
-
-const AboutPanel = memo(() => {
-    const env = useWaveEnv<WaveConfigEnv>();
-    const items = [
-        {
-            icon: "fa-lightbulb",
-            label: "Tips",
-            description: "Quick tips for getting the most out of Wave.",
-            onClick: () => {
-                env.createBlock({ meta: { view: "tips" } }, true, true);
-            },
-        },
-        {
-            icon: "fa-book-open",
-            label: "Release Notes",
-            description: "See what's new in this version.",
-            onClick: () => {
-                modalsModel.pushModal("UpgradeOnboardingPatch", { isReleaseNotes: true });
-            },
-        },
-        {
-            icon: "fa-circle-question",
-            label: "Help",
-            description: "Open the in-app help.",
-            onClick: () => {
-                env.createBlock({ meta: { view: "help" } });
-            },
-        },
-    ];
-    return (
-        <div className="flex flex-col px-6 py-3">
-            {items.map((it) => (
-                <div
-                    key={it.label}
-                    onClick={it.onClick}
-                    className="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded cursor-pointer hover:bg-secondary/40 transition-colors"
-                >
-                    <i className={cn("fa fa-sharp fa-solid w-5 text-center text-secondary", it.icon)} />
-                    <div className="flex flex-col">
-                        <span className="text-sm text-primary">{it.label}</span>
-                        <span className="text-xs text-muted-foreground">{it.description}</span>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-});
-AboutPanel.displayName = "AboutPanel";
 
 const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
     const env = useWaveEnv<WaveConfigEnv>();
@@ -106,9 +55,6 @@ const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
         />
     );
 
-    if (!searching && category === ABOUT_CATEGORY) {
-        return <AboutPanel />;
-    }
     if (visible.length === 0) {
         return <div className="p-6 text-muted-foreground text-sm">No matching settings.</div>;
     }
@@ -137,19 +83,6 @@ const CategorySidebar = memo(({ model }: { model: WaveConfigViewModel }) => {
                     {g.label}
                 </div>
             ))}
-            <div
-                key={ABOUT_CATEGORY}
-                onClick={() => !disabled && setCategory(ABOUT_CATEGORY)}
-                className={cn(
-                    "px-4 py-1.5 text-sm cursor-pointer transition-colors mt-auto border-t border-border",
-                    disabled && "opacity-40 cursor-default",
-                    !disabled && category === ABOUT_CATEGORY
-                        ? "bg-accentbg text-primary"
-                        : "text-secondary hover:bg-secondary/50"
-                )}
-            >
-                About
-            </div>
         </div>
     );
 });

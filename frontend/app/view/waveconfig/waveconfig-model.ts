@@ -6,6 +6,7 @@ import { globalStore } from "@/app/store/jotaiStore";
 import type { TabModel } from "@/app/store/tab-model";
 import { makeORef } from "@/app/store/wos";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
+import { AboutContent } from "@/app/view/waveconfig/aboutcontent";
 import { SecretsContent } from "@/app/view/waveconfig/secretscontent";
 import { SettingsContent } from "@/app/view/waveconfig/settings-ui/settingscontent";
 import { WaveConfigView } from "@/app/view/waveconfig/waveconfig";
@@ -27,6 +28,7 @@ export type ConfigFile = {
     docsUrl?: string;
     validator?: ConfigValidator;
     isSecrets?: boolean;
+    isAbout?: boolean;
     hasJsonView?: boolean;
     visualComponent?: React.ComponentType<{ model: WaveConfigViewModel }>;
 };
@@ -104,6 +106,13 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             isSecrets: true,
             hasJsonView: false,
             visualComponent: SecretsContent,
+        },
+        {
+            name: "About",
+            path: "about",
+            isAbout: true,
+            hasJsonView: false,
+            visualComponent: AboutContent,
         },
     ];
 }
@@ -295,6 +304,16 @@ export class WaveConfigViewModel implements ViewModel {
         globalStore.set(this.isLoadingAtom, true);
         globalStore.set(this.errorMessageAtom, null);
         globalStore.set(this.hasEditedAtom, false);
+
+        if (file.isAbout) {
+            globalStore.set(this.selectedFileAtom, file);
+            this.env.rpc.SetMetaCommand(TabRpcClient, {
+                oref: makeORef("block", this.blockId),
+                meta: { file: file.path },
+            });
+            globalStore.set(this.isLoadingAtom, false);
+            return;
+        }
 
         if (file.isSecrets) {
             globalStore.set(this.selectedFileAtom, file);
