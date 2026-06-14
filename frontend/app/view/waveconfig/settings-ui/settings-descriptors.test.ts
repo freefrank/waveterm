@@ -60,6 +60,18 @@ describe("buildDescriptors", () => {
         expect(tabbar.label).toBe("Tabbar");
     });
 
+    it("excludes keys in dedicated-file categories (conn/ai/waveai)", () => {
+        const descs = buildDescriptors(
+            { "conn:wshenabled": { type: "boolean" }, "ai:model": { type: "string" }, "waveai:defaultmode": { type: "string" }, "term:fontsize": { type: "number" } },
+            {}
+        );
+        const keys = descs.map((d) => d.key);
+        expect(keys).not.toContain("conn:wshenabled");
+        expect(keys).not.toContain("ai:model");
+        expect(keys).not.toContain("waveai:defaultmode");
+        expect(keys).toContain("term:fontsize");
+    });
+
     it("lets the overlay override kind and enumOptions", () => {
         const descs = buildDescriptors(SCHEMA, {
             "debug:rawkey": { kind: "dropdown", enumOptions: ["x", "y"] },

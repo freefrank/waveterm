@@ -3,6 +3,7 @@
 
 import {
     CategoryMetadata,
+    ExcludedCategories,
     type ControlKind,
     type SettingsOverlayEntry,
 } from "@/app/view/waveconfig/settings-ui/settings-metadata";
@@ -66,6 +67,9 @@ export function buildDescriptors(
     const result: SettingDescriptor[] = [];
     for (const key of Object.keys(schemaProps)) {
         if (key.endsWith(":*")) {
+            continue;
+        }
+        if (ExcludedCategories.includes(categoryOf(key))) {
             continue;
         }
         const schemaEntry = schemaProps[key] ?? {};

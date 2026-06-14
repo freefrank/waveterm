@@ -40,6 +40,12 @@ export const CategoryMetadata: CategoryMeta[] = [
     { key: "debug", label: "Debug", order: 160 },
 ];
 
+// Category prefixes that have a dedicated config file and so are excluded from the general
+// settings panel: conn:* lives in connections.json, ai:*/waveai:* live in waveai.json (set
+// globally there and per-mode). Keys in these categories never become descriptors, so they
+// are absent from the sidebar, panel, and search.
+export const ExcludedCategories: string[] = ["conn", "ai", "waveai"];
+
 // Overlay keyed by full setting key. Only important keys need entries; everything else
 // falls back to schema-derived defaults. enumOptions here are STATIC (v1).
 export const SettingsOverlay: Record<string, SettingsOverlayEntry> = {
