@@ -210,6 +210,7 @@ export class WaveConfigViewModel implements ViewModel {
         this.storageBackendErrorAtom = atom<string | null>(null) as PrimitiveAtom<string | null>;
 
         this.checkPresetsJsonExists();
+        this.loadSettingsDefaults();
         this.initialize();
     }
 

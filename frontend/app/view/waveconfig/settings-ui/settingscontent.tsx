@@ -16,10 +16,12 @@ import {
 } from "@/app/view/waveconfig/settings-ui/settings-descriptors";
 import { cn } from "@/util/util";
 import { useAtom, useAtomValue } from "jotai";
-import { memo, useEffect, useMemo } from "react";
+import { memo, useMemo } from "react";
 import settingsSchema from "../../../../../schema/settings.json";
 
 const SCHEMA_PROPS = (settingsSchema as any).$defs.SettingsType.properties as SchemaProps;
+const ALL_DESCRIPTORS = buildDescriptors(SCHEMA_PROPS, SettingsOverlay);
+const GROUPS = groupByCategory(ALL_DESCRIPTORS);
 
 const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
     const env = useWaveEnv<WaveConfigEnv>();
@@ -28,21 +30,19 @@ const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
     const category = useAtomValue(model.settingsCategoryAtom);
     const search = useAtomValue(model.settingsSearchAtom);
 
-    const allDescriptors = useMemo(() => buildDescriptors(SCHEMA_PROPS, SettingsOverlay), []);
-    const groups = useMemo(() => groupByCategory(allDescriptors), [allDescriptors]);
     const settings = (fullConfig?.settings ?? {}) as Record<string, any>;
 
     const searching = search.trim() !== "";
     const visible: SettingDescriptor[] = useMemo(() => {
         if (searching) {
-            return filterDescriptors(allDescriptors, search);
+            return filterDescriptors(ALL_DESCRIPTORS, search);
         }
-        const group = groups.find((g) => g.key === category);
+        const group = GROUPS.find((g) => g.key === category);
         if (!group) {
             return [];
         }
         return [...group.common, ...group.advanced];
-    }, [searching, search, allDescriptors, groups, category]);
+    }, [searching, search, category]);
 
     const renderRow = (desc: SettingDescriptor) => (
         <SettingRow
@@ -65,14 +65,10 @@ SettingsPanel.displayName = "SettingsPanel";
 const CategorySidebar = memo(({ model }: { model: WaveConfigViewModel }) => {
     const [category, setCategory] = useAtom(model.settingsCategoryAtom);
     const search = useAtomValue(model.settingsSearchAtom);
-    const groups = useMemo(
-        () => groupByCategory(buildDescriptors(SCHEMA_PROPS, SettingsOverlay)),
-        []
-    );
     const disabled = search.trim() !== "";
     return (
         <div className="flex flex-col w-44 border-r border-border overflow-y-auto shrink-0">
-            {groups.map((g) => (
+            {GROUPS.map((g) => (
                 <div
                     key={g.key}
                     onClick={() => !disabled && setCategory(g.key)}
@@ -94,10 +90,6 @@ CategorySidebar.displayName = "CategorySidebar";
 
 export const SettingsContent = memo(({ model }: { model: WaveConfigViewModel }) => {
     const [search, setSearch] = useAtom(model.settingsSearchAtom);
-
-    useEffect(() => {
-        model.loadSettingsDefaults();
-    }, [model]);
 
     return (
         <div className="flex flex-col h-full">
