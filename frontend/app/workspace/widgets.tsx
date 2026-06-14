@@ -434,6 +434,10 @@ const Widgets = memo(() => {
         checkModeNeeded();
     }, [widgets, checkModeNeeded]);
 
+    const handleOpenSettings = () => {
+        fireAndForget(() => env.createBlock({ meta: { view: "waveconfig" } }, false, true));
+    };
+
     const handleWidgetsBarContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         const menu: ContextMenuItem[] = [
@@ -487,7 +491,7 @@ const Widgets = memo(() => {
                             <div
                                 ref={settingsButtonRef}
                                 className="flex flex-col justify-center items-center w-full py-1.5 pr-0.5 text-secondary text-sm overflow-hidden rounded-sm hover:bg-hoverbg hover:text-white cursor-pointer"
-                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                onClick={handleOpenSettings}
                             >
                                 <Tooltip
                                     content={<SettingsTooltipContent hasConfigErrors={hasConfigErrors} />}
@@ -533,7 +537,7 @@ const Widgets = memo(() => {
                         <div
                             ref={settingsButtonRef}
                             className="flex flex-col justify-center items-center w-full py-1.5 pr-0.5 text-secondary text-lg overflow-hidden rounded-sm hover:bg-hoverbg hover:text-white cursor-pointer"
-                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                            onClick={handleOpenSettings}
                         >
                             <Tooltip
                                 content={<SettingsTooltipContent hasConfigErrors={hasConfigErrors} />}

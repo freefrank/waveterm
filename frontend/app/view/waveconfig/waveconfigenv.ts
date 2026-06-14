@@ -24,6 +24,7 @@ export type WaveConfigEnv = WaveEnvSubset<{
     atoms: {
         fullConfigAtom: WaveEnv["atoms"]["fullConfigAtom"];
     };
+    createBlock: WaveEnv["createBlock"];
     getBlockMetaKeyAtom: MetaKeyAtomFnType<"file">;
     isWindows: WaveEnv["isWindows"];
 }>;
