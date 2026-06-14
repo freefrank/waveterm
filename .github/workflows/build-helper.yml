@@ -18,6 +18,7 @@ jobs:
         outputs:
             version: ${{ steps.set-version.outputs.WAVETERM_VERSION }}
         strategy:
+            fail-fast: false
             matrix:
                 include:
                     - platform: "darwin"
