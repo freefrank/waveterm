@@ -178,16 +178,10 @@ func (svc *WorkspaceService) SetActiveTab(workspaceId string, tabId string) (wav
 	if err != nil {
 		return nil, fmt.Errorf("error setting active tab: %w", err)
 	}
-	// check all blocks in tab and start controllers (if necessary)
-	tab, err := wstore.DBMustGet[*waveobj.Tab](ctx, tabId)
-	if err != nil {
-		return nil, fmt.Errorf("error getting tab: %w", err)
-	}
-	blockORefs := tab.GetBlockORefs()
-	blocks, err := wstore.DBSelectORefs(ctx, blockORefs)
-	if err != nil {
-		return nil, fmt.Errorf("error getting tab blocks: %w", err)
-	}
+	// Previously this also read the tab + all of its blocks to return them as extra updates. No caller
+	// uses the return value (electron discards it; the target tab's webContents already has its blocks
+	// cached and reloads its own tab/layout), and these reads serialized on the single-connection store,
+	// making them the dominant cost of rapid tab switching. The relevant updates are still broadcast below.
 	updates := waveobj.ContextGetUpdatesRtn(ctx)
 	go func() {
 		defer func() {
@@ -195,11 +189,7 @@ func (svc *WorkspaceService) SetActiveTab(workspaceId string, tabId string) (wav
 		}()
 		wps.Broker.SendUpdateEvents(updates)
 	}()
-	var extraUpdates waveobj.UpdatesRtnType
-	extraUpdates = append(extraUpdates, updates...)
-	extraUpdates = append(extraUpdates, waveobj.MakeUpdate(tab))
-	extraUpdates = append(extraUpdates, waveobj.MakeUpdates(blocks)...)
-	return extraUpdates, nil
+	return updates, nil
 }
 
 type CloseTabRtnType struct {

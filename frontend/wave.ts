@@ -6,7 +6,6 @@ import { loadMonaco } from "@/app/monaco/monaco-env";
 import { loadBadges } from "@/app/store/badge";
 import { GlobalModel } from "@/app/store/global-model";
 import {
-    globalRefocus,
     registerBuilderGlobalKeys,
     registerControlShiftStateUpdateHandler,
     registerElectronReinjectKeyHandler,
@@ -107,28 +106,17 @@ async function reinitWave() {
         }, 100)
     );
 
-    await WOS.reloadWaveObject<Client>(WOS.makeORef("client", savedInitOpts.clientId));
-    const waveWindow = await WOS.reloadWaveObject<WaveWindow>(WOS.makeORef("window", savedInitOpts.windowId));
-    const ws = await WOS.reloadWaveObject<Workspace>(WOS.makeORef("workspace", waveWindow.workspaceid));
+    // This webContents is bound to a single tab and stays alive (off-screen) while inactive, so its WPS
+    // subscriptions keep client/window/workspace/tab/layout fresh the whole time. Re-fetching all of them
+    // on every switch was redundant DB traffic that serialized on the single-connection store and was the
+    // dominant cost of rapid tab switching. We refresh only the switched-to tab + its layout as a cheap
+    // safety net against a missed event.
     const initialTab = await WOS.reloadWaveObject<Tab>(WOS.makeORef("tab", savedInitOpts.tabId));
     await WOS.reloadWaveObject<LayoutState>(WOS.makeORef("layout", initialTab.layoutstate));
-    reloadAllWorkspaceTabs(ws);
     document.title = `Wave Terminal - ${initialTab.name}`; // TODO update with tab name change
     getApi().setWindowInitStatus("wave-ready");
     globalStore.set(atoms.reinitVersion, globalStore.get(atoms.reinitVersion) + 1);
     globalStore.set(atoms.updaterStatusAtom, getApi().getUpdaterStatus());
-    setTimeout(() => {
-        globalRefocus();
-    }, 50);
-}
-
-function reloadAllWorkspaceTabs(ws: Workspace) {
-    if (ws == null || !ws.tabids?.length) {
-        return;
-    }
-    ws.tabids?.forEach((tabid) => {
-        WOS.reloadWaveObject<Tab>(WOS.makeORef("tab", tabid));
-    });
 }
 
 function loadAllWorkspaceTabs(ws: Workspace) {
