@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Tooltip } from "@/app/element/tooltip";
+import {
+    DEFAULT_FONT_SIZE,
+    FONT_SIZE_PRESETS,
+    getAvailableFontFamilies,
+} from "@/app/view/waveconfig/settings-ui/fonts";
 import type { SettingDescriptor } from "@/app/view/waveconfig/settings-ui/settings-descriptors";
 import { cn } from "@/util/util";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 type ControlProps = {
     descriptor: SettingDescriptor;
@@ -124,6 +129,133 @@ const StringListControl = memo(({ value, onChange }: ControlProps) => {
 });
 StringListControl.displayName = "StringListControl";
 
+const FontSizeControl = memo(({ value, onChange }: ControlProps) => {
+    const current = value == null ? DEFAULT_FONT_SIZE : Number(value);
+    const options = FONT_SIZE_PRESETS.includes(current)
+        ? FONT_SIZE_PRESETS
+        : [...FONT_SIZE_PRESETS, current].sort((a, b) => a - b);
+    return (
+        <select
+            value={String(current)}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-28 px-2 py-1 rounded border border-border bg-background text-primary text-sm cursor-pointer"
+        >
+            {options.map((sz) => (
+                <option key={sz} value={sz}>
+                    {sz}px
+                </option>
+            ))}
+        </select>
+    );
+});
+FontSizeControl.displayName = "FontSizeControl";
+
+const FontFamilyControl = memo(({ value, onChange }: ControlProps) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const [families, setFamilies] = useState<string[]>([]);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        const onDocMouseDown = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery("");
+            }
+        };
+        document.addEventListener("mousedown", onDocMouseDown);
+        return () => document.removeEventListener("mousedown", onDocMouseDown);
+    }, [open]);
+
+    // queryLocalFonts requires transient user activation, so load within the click handler (not an effect).
+    const toggleOpen = () => {
+        const next = !open;
+        setOpen(next);
+        if (next && families.length === 0) {
+            getAvailableFontFamilies().then(setFamilies);
+        }
+    };
+
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (q === "") {
+            return families;
+        }
+        return families.filter((f) => f.toLowerCase().includes(q));
+    }, [families, query]);
+
+    const commit = (family: string) => {
+        onChange(family);
+        setOpen(false);
+        setQuery("");
+    };
+
+    const display = value == null || value === "" ? "Default" : String(value);
+
+    return (
+        <div ref={containerRef} className="relative w-56">
+            <button
+                onClick={toggleOpen}
+                className="w-full flex items-center justify-between px-2 py-1 rounded border border-border bg-background text-primary text-sm cursor-pointer"
+            >
+                <span className="truncate" style={{ fontFamily: value || undefined }}>
+                    {display}
+                </span>
+                <i className="fa fa-chevron-down text-xs text-muted-foreground ml-2 shrink-0" />
+            </button>
+            {open && (
+                <div className="absolute z-20 mt-1 w-full rounded border border-border bg-background shadow-xl">
+                    <input
+                        autoFocus
+                        type="text"
+                        value={query}
+                        placeholder="Search fonts..."
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                if (filtered.length > 0) {
+                                    commit(filtered[0]);
+                                } else if (query.trim() !== "") {
+                                    commit(query.trim());
+                                }
+                            } else if (e.key === "Escape") {
+                                setOpen(false);
+                                setQuery("");
+                            }
+                        }}
+                        className="w-full px-2 py-1 border-b border-border bg-background text-primary text-sm"
+                    />
+                    <div className="max-h-56 overflow-y-auto">
+                        {filtered.length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                {query.trim() ? `Press Enter to use "${query.trim()}"` : "No fonts"}
+                            </div>
+                        ) : (
+                            filtered.map((f) => (
+                                <div
+                                    key={f}
+                                    onClick={() => commit(f)}
+                                    className={cn(
+                                        "px-2 py-1 text-sm cursor-pointer truncate hover:bg-secondary/50",
+                                        f === value ? "bg-accentbg text-primary" : "text-secondary"
+                                    )}
+                                    style={{ fontFamily: f }}
+                                >
+                                    {f}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+});
+FontFamilyControl.displayName = "FontFamilyControl";
+
 const SettingControl = memo((props: ControlProps) => {
     switch (props.descriptor.kind) {
         case "toggle":
@@ -134,6 +266,10 @@ const SettingControl = memo((props: ControlProps) => {
             return <DropdownControl {...props} />;
         case "stringlist":
             return <StringListControl {...props} />;
+        case "fontsize":
+            return <FontSizeControl {...props} />;
+        case "fontfamily":
+            return <FontFamilyControl {...props} />;
         default:
             return <TextControl {...props} />;
     }

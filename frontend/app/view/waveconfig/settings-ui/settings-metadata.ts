@@ -1,7 +1,7 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-export type ControlKind = "toggle" | "number" | "text" | "dropdown" | "stringlist";
+export type ControlKind = "toggle" | "number" | "text" | "dropdown" | "stringlist" | "fontfamily" | "fontsize";
 
 export type SettingsOverlayEntry = {
     label?: string;
@@ -65,11 +65,13 @@ export const SettingsOverlay: Record<string, SettingsOverlayEntry> = {
     "term:fontsize": {
         label: "Font size",
         description: "Terminal font size in points.",
+        kind: "fontsize",
         group: "appearance",
     },
     "term:fontfamily": {
         label: "Font family",
         description: "Terminal font family name.",
+        kind: "fontfamily",
         group: "appearance",
     },
     "term:theme": {
