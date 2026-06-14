@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { modalsModel } from "@/app/store/modalmodel";
+import { getApi } from "@/app/store/global";
 import type { WaveConfigViewModel } from "@/app/view/waveconfig/waveconfig-model";
 import { cn } from "@/util/util";
 import { memo } from "react";
 
 export const AboutContent = memo(({ model }: { model: WaveConfigViewModel }) => {
+    const version = getApi().getAboutModalDetails()?.version;
     const items = [
         {
             icon: "fa-lightbulb",
@@ -35,6 +37,12 @@ export const AboutContent = memo(({ model }: { model: WaveConfigViewModel }) => 
     ];
     return (
         <div className="flex flex-col px-6 py-4">
+            {version && (
+                <div className="pb-3 mb-2 border-b border-border/50">
+                    <div className="text-sm text-primary">Wave Terminal</div>
+                    <div className="text-xs text-muted-foreground font-mono">v{version}</div>
+                </div>
+            )}
             {items.map((it) => (
                 <div
                     key={it.label}

@@ -5,7 +5,6 @@ import { Tooltip } from "@/app/element/tooltip";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv, WaveEnv, WaveEnvSubset } from "@/app/waveenv/waveenv";
 import { shouldIncludeWidgetForWorkspace } from "@/app/workspace/widgetfilter";
-import { modalsModel } from "@/store/modalmodel";
 import { fireAndForget, isBlank, makeIconClass } from "@/util/util";
 import {
     autoUpdate,
@@ -253,121 +252,6 @@ const AppsFloatingWindow = memo(({ isOpen, onClose, referenceElement }: Floating
     );
 });
 
-const SettingsFloatingWindow = memo(
-    ({ isOpen, onClose, referenceElement, hasConfigErrors }: FloatingWindowPropsType) => {
-        const env = useWaveEnv<WidgetsEnv>();
-        const { refs, floatingStyles, context } = useFloating({
-            open: isOpen,
-            onOpenChange: onClose,
-            placement: "left-start",
-            middleware: [offset(-2), shift({ padding: 12 })],
-            whileElementsMounted: autoUpdate,
-            elements: {
-                reference: referenceElement,
-            },
-        });
-
-        const dismiss = useDismiss(context);
-        const { getFloatingProps } = useInteractions([dismiss]);
-
-        if (!isOpen) return null;
-
-        const menuItems = [
-            {
-                icon: "gear",
-                label: "Settings",
-                hasError: hasConfigErrors,
-                onClick: () => {
-                    const blockDef: BlockDef = {
-                        meta: {
-                            view: "waveconfig",
-                        },
-                    };
-                    env.createBlock(blockDef, false, true);
-                    onClose();
-                },
-            },
-            {
-                icon: "lightbulb",
-                label: "Tips",
-                onClick: () => {
-                    const blockDef: BlockDef = {
-                        meta: {
-                            view: "tips",
-                        },
-                    };
-                    env.createBlock(blockDef, true, true);
-                    onClose();
-                },
-            },
-            {
-                icon: "lock",
-                label: "Secrets",
-                onClick: () => {
-                    const blockDef: BlockDef = {
-                        meta: {
-                            view: "waveconfig",
-                            file: "secrets",
-                        },
-                    };
-                    env.createBlock(blockDef, false, true);
-                    onClose();
-                },
-            },
-            {
-                icon: "book-open",
-                label: "Release Notes",
-                onClick: () => {
-                    modalsModel.pushModal("UpgradeOnboardingPatch", { isReleaseNotes: true });
-                    onClose();
-                },
-            },
-            {
-                icon: "circle-question",
-                label: "Help",
-                onClick: () => {
-                    const blockDef: BlockDef = {
-                        meta: {
-                            view: "help",
-                        },
-                    };
-                    env.createBlock(blockDef);
-                    onClose();
-                },
-            },
-        ];
-
-        return (
-            <FloatingPortal>
-                <div
-                    ref={refs.setFloating}
-                    style={floatingStyles}
-                    {...getFloatingProps()}
-                    className="bg-modalbg border border-border rounded-lg shadow-xl p-2 z-50"
-                >
-                    {menuItems.map((item, idx) => (
-                        <div
-                            key={idx}
-                            className="flex items-center gap-3 px-3 py-2 rounded hover:bg-hoverbg cursor-pointer transition-colors text-secondary hover:text-white"
-                            onClick={item.onClick}
-                        >
-                            <div className="text-lg w-5 flex justify-center">
-                                <i className={makeIconClass(item.icon, false)}></i>
-                            </div>
-                            <div className="text-sm whitespace-nowrap">{item.label}</div>
-                            {item.hasError && (
-                                <i className="fa fa-solid fa-circle-exclamation text-error text-[14px] ml-auto"></i>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </FloatingPortal>
-        );
-    }
-);
-
-SettingsFloatingWindow.displayName = "SettingsFloatingWindow";
-
 const Widgets = memo(() => {
     const env = useWaveEnv<WidgetsEnv>();
     const fullConfig = useAtomValue(env.atoms.fullConfigAtom);
@@ -386,7 +270,6 @@ const Widgets = memo(() => {
 
     const [isAppsOpen, setIsAppsOpen] = useState(false);
     const appsButtonRef = useRef<HTMLDivElement>(null);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const settingsButtonRef = useRef<HTMLDivElement>(null);
 
     const checkModeNeeded = useCallback(() => {
@@ -496,7 +379,6 @@ const Widgets = memo(() => {
                                 <Tooltip
                                     content={<SettingsTooltipContent hasConfigErrors={hasConfigErrors} />}
                                     placement="left"
-                                    disable={isSettingsOpen}
                                 >
                                     <div className="relative">
                                         <i className={makeIconClass("gear", true)}></i>
@@ -542,7 +424,6 @@ const Widgets = memo(() => {
                             <Tooltip
                                 content={<SettingsTooltipContent hasConfigErrors={hasConfigErrors} />}
                                 placement="left"
-                                disable={isSettingsOpen}
                             >
                                 <div className="flex flex-col items-center w-full">
                                     <div className="relative">
@@ -577,14 +458,6 @@ const Widgets = memo(() => {
                     isOpen={isAppsOpen}
                     onClose={() => setIsAppsOpen(false)}
                     referenceElement={appsButtonRef.current}
-                />
-            )}
-            {settingsButtonRef.current && (
-                <SettingsFloatingWindow
-                    isOpen={isSettingsOpen}
-                    onClose={() => setIsSettingsOpen(false)}
-                    referenceElement={settingsButtonRef.current}
-                    hasConfigErrors={hasConfigErrors}
                 />
             )}
 
