@@ -95,7 +95,7 @@ export function groupByCategory(descriptors: SettingDescriptor[]): CategoryGroup
             const meta = metaByKey.get(desc.category);
             group = {
                 key: desc.category,
-                label: meta?.label ?? deriveLabel(`${desc.category}:`),
+                label: meta?.label ?? desc.category.charAt(0).toUpperCase() + desc.category.slice(1),
                 order: meta?.order ?? UNLISTED_CATEGORY_ORDER,
                 common: [],
                 advanced: [],

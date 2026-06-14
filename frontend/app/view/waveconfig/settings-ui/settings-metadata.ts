@@ -25,6 +25,7 @@ export const CategoryMetadata: CategoryMeta[] = [
     { key: "window", label: "Window", order: 20 },
     { key: "term", label: "Terminal", order: 30 },
     { key: "ai", label: "AI", order: 40 },
+    { key: "waveai", label: "Wave AI", order: 45 },
     { key: "editor", label: "Editor", order: 50 },
     { key: "web", label: "Web", order: 60 },
     { key: "conn", label: "Connections", order: 70 },

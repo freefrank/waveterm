@@ -82,6 +82,13 @@ describe("groupByCategory", () => {
         expect(debugGroup.advanced.map((d) => d.key)).toContain("debug:rawkey");
         expect(debugGroup.common.map((d) => d.key)).not.toContain("debug:rawkey");
     });
+
+    it("capitalizes the label for a category not in CategoryMetadata", () => {
+        const descs = buildDescriptors({ "zzz:thing": { type: "boolean" } }, {});
+        const groups = groupByCategory(descs);
+        const zzz = groups.find((g) => g.key === "zzz");
+        expect(zzz.label).toBe("Zzz");
+    });
 });
 
 describe("isModified", () => {
