@@ -187,7 +187,7 @@ export class WaveConfigViewModel implements ViewModel {
         this.isMenuOpenAtom = atom(false);
         this.presetsJsonExistsAtom = atom(false);
         this.activeTabAtom = atom<"visual" | "json">("visual");
-        this.settingsCategoryAtom = atom("app");
+        this.settingsCategoryAtom = atom("appearance");
         this.settingsSearchAtom = atom("");
         this.settingsDefaultsAtom = atom<Record<string, any>>({});
         this.configErrorFilesAtom = atom((get) => {

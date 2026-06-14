@@ -52,7 +52,7 @@ describe("buildDescriptors", () => {
         expect(fs.label).toBe("Font size");
         expect(fs.description).toBe("pts");
         expect(fs.kind).toBe("number");
-        expect(fs.category).toBe("term");
+        expect(fs.category).toBe("terminal");
 
         const tabbar = descs.find((d) => d.key === "app:tabbar");
         expect(tabbar.kind).toBe("dropdown");
@@ -83,16 +83,16 @@ describe("buildDescriptors", () => {
 });
 
 describe("groupByCategory", () => {
-    it("orders known categories and separates advanced", () => {
+    it("orders functional groups and separates advanced", () => {
         const descs = buildDescriptors(SCHEMA, {
             "debug:rawkey": { advanced: true },
         });
         const groups = groupByCategory(descs);
         const labels = groups.map((g) => g.label);
-        expect(labels.indexOf("Application")).toBeLessThan(labels.indexOf("Terminal"));
-        const debugGroup = groups.find((g) => g.key === "debug");
-        expect(debugGroup.advanced.map((d) => d.key)).toContain("debug:rawkey");
-        expect(debugGroup.common.map((d) => d.key)).not.toContain("debug:rawkey");
+        expect(labels.indexOf("General")).toBeLessThan(labels.indexOf("Terminal"));
+        const advGroup = groups.find((g) => g.key === "advanced");
+        expect(advGroup.advanced.map((d) => d.key)).toContain("debug:rawkey");
+        expect(advGroup.common.map((d) => d.key)).not.toContain("debug:rawkey");
     });
 
     it("capitalizes the label for a category not in CategoryMetadata", () => {

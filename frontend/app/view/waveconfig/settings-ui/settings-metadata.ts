@@ -10,6 +10,7 @@ export type SettingsOverlayEntry = {
     enumOptions?: string[];
     advanced?: boolean;
     order?: number;
+    group?: string;
 };
 
 export type CategoryMeta = {
@@ -18,27 +19,38 @@ export type CategoryMeta = {
     order: number;
 };
 
-// Human labels + display order for category prefixes. Categories not listed here
-// fall back to a capitalized prefix and sort after the listed ones (see settings-descriptors).
+// Functional groups shown in the sidebar/panel. A setting's group is resolved as:
+// overlay.group (if set) -> PrefixGroupDefaults[prefix] -> the raw prefix.
 export const CategoryMetadata: CategoryMeta[] = [
-    { key: "app", label: "Application", order: 10 },
-    { key: "window", label: "Window", order: 20 },
-    { key: "term", label: "Terminal", order: 30 },
-    { key: "ai", label: "AI", order: 40 },
-    { key: "waveai", label: "Wave AI", order: 45 },
-    { key: "editor", label: "Editor", order: 50 },
-    { key: "web", label: "Web", order: 60 },
-    { key: "conn", label: "Connections", order: 70 },
-    { key: "tab", label: "Tabs", order: 80 },
-    { key: "preview", label: "Preview", order: 90 },
-    { key: "markdown", label: "Markdown", order: 100 },
-    { key: "autoupdate", label: "Auto Update", order: 110 },
-    { key: "telemetry", label: "Telemetry", order: 120 },
-    { key: "widget", label: "Widgets", order: 130 },
-    { key: "tsunami", label: "Tsunami", order: 140 },
-    { key: "feature", label: "Features", order: 150 },
-    { key: "debug", label: "Debug", order: 160 },
+    { key: "appearance", label: "Appearance", order: 10 },
+    { key: "general", label: "General", order: 20 },
+    { key: "terminal", label: "Terminal", order: 30 },
+    { key: "editor", label: "Editor", order: 40 },
+    { key: "window", label: "Window & Layout", order: 50 },
+    { key: "files", label: "Files & Preview", order: 60 },
+    { key: "web", label: "Web", order: 70 },
+    { key: "updates", label: "Updates", order: 80 },
+    { key: "advanced", label: "Advanced", order: 90 },
 ];
+
+// Default functional group per key prefix, for keys without an explicit overlay.group.
+// Cross-cutting keys (e.g. fonts/themes living under term/editor) override this via overlay.group.
+export const PrefixGroupDefaults: Record<string, string> = {
+    app: "general",
+    window: "appearance",
+    term: "terminal",
+    editor: "editor",
+    markdown: "appearance",
+    preview: "files",
+    web: "web",
+    autoupdate: "updates",
+    telemetry: "advanced",
+    debug: "advanced",
+    tsunami: "advanced",
+    feature: "advanced",
+    widget: "advanced",
+    tab: "appearance",
+};
 
 // Category prefixes that have a dedicated config file and so are excluded from the general
 // settings panel: conn:* lives in connections.json, ai:*/waveai:* live in waveai.json (set
@@ -47,13 +59,52 @@ export const CategoryMetadata: CategoryMeta[] = [
 export const ExcludedCategories: string[] = ["conn", "ai", "waveai"];
 
 // Overlay keyed by full setting key. Only important keys need entries; everything else
-// falls back to schema-derived defaults. enumOptions here are STATIC (v1).
+// falls back to schema-derived defaults + the prefix's default group. enumOptions are STATIC (v1).
 export const SettingsOverlay: Record<string, SettingsOverlayEntry> = {
+    // --- Appearance (cross-cutting: pulled from term/editor/window/tab prefixes) ---
+    "term:fontsize": {
+        label: "Font size",
+        description: "Terminal font size in points.",
+        group: "appearance",
+    },
+    "term:fontfamily": {
+        label: "Font family",
+        description: "Terminal font family name.",
+        group: "appearance",
+    },
+    "term:theme": {
+        label: "Terminal theme",
+        group: "appearance",
+    },
+    "term:transparency": {
+        label: "Terminal transparency",
+        group: "appearance",
+    },
+    "term:cursor": {
+        label: "Cursor style",
+        enumOptions: ["block", "bar", "underline"],
+        group: "appearance",
+    },
+    "term:cursorblink": {
+        label: "Cursor blink",
+        group: "appearance",
+    },
+    "editor:fontsize": {
+        label: "Editor font size",
+        group: "appearance",
+    },
     "app:tabbar": {
         label: "Tab bar position",
         description: "Where the tab bar is displayed.",
         enumOptions: ["top", "left"],
+        group: "appearance",
     },
+    "window:nativetitlebar": {
+        label: "Native title bar",
+        description: "Use the OS native title bar instead of the custom one.",
+    },
+
+    // --- General (app behavior + a few window keys) ---
     "app:defaultnewblock": {
         label: "Default new block",
         description: "Block type opened when creating a new block.",
@@ -66,32 +117,24 @@ export const SettingsOverlay: Record<string, SettingsOverlayEntry> = {
         label: "Focus follows cursor",
         enumOptions: ["off", "on", "term"],
     },
-    "window:nativetitlebar": {
-        label: "Native title bar",
-        description: "Use the OS native title bar instead of the custom one.",
-    },
     "window:confirmclose": {
         label: "Confirm on window close",
+        group: "general",
     },
-    "window:tilegapsize": {
-        label: "Tile gap size",
-        description: "Gap (in px) between tiled blocks.",
+    "window:savelastwindow": {
+        label: "Restore last window",
+        group: "general",
     },
-    "term:fontsize": {
-        label: "Font size",
-        description: "Terminal font size in points.",
+    "window:fullscreenonlaunch": {
+        label: "Fullscreen on launch",
+        group: "general",
     },
-    "term:fontfamily": {
-        label: "Font family",
-        description: "Terminal font family name.",
+    "window:showmenubar": {
+        label: "Show menu bar",
+        group: "general",
     },
-    "term:cursor": {
-        label: "Cursor style",
-        enumOptions: ["block", "bar", "underline"],
-    },
-    "term:cursorblink": {
-        label: "Cursor blink",
-    },
+
+    // --- Terminal (behavior) ---
     "term:copyonselect": {
         label: "Copy on select",
     },
@@ -99,28 +142,49 @@ export const SettingsOverlay: Record<string, SettingsOverlayEntry> = {
         label: "OSC 52 clipboard",
         enumOptions: ["focus", "always"],
     },
-    "ai:model": {
-        label: "AI model",
-        description: "Default model used by Wave AI.",
-    },
-    "ai:maxtokens": {
-        label: "AI max tokens",
-    },
-    "editor:fontsize": {
-        label: "Editor font size",
-    },
+
+    // --- Editor ---
     "editor:wordwrap": {
         label: "Word wrap",
     },
+
+    // --- Window & Layout ---
+    "window:tilegapsize": {
+        label: "Tile gap size",
+        description: "Gap (in px) between tiled blocks.",
+        group: "window",
+    },
+    "window:maxtabcachesize": {
+        label: "Max tab cache size",
+        group: "window",
+    },
+    "window:dimensions": {
+        label: "Window dimensions",
+        group: "window",
+    },
+    "window:disablehardwareacceleration": {
+        label: "Disable hardware acceleration",
+        group: "window",
+    },
+    "tab:confirmclose": {
+        label: "Confirm on tab close",
+        group: "window",
+    },
+
+    // --- Web ---
     "web:defaulturl": {
         label: "Default URL",
         description: "Page opened in a new web block.",
     },
+
+    // --- Updates ---
+    "autoupdate:enabled": {
+        label: "Auto update enabled",
+    },
+
+    // --- Advanced ---
     "telemetry:enabled": {
         label: "Telemetry enabled",
         description: "Send anonymous usage telemetry to help improve Wave.",
-    },
-    "autoupdate:enabled": {
-        label: "Auto update enabled",
     },
 };

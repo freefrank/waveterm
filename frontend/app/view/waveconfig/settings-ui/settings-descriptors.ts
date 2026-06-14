@@ -4,6 +4,7 @@
 import {
     CategoryMetadata,
     ExcludedCategories,
+    PrefixGroupDefaults,
     type ControlKind,
     type SettingsOverlayEntry,
 } from "@/app/view/waveconfig/settings-ui/settings-metadata";
@@ -76,13 +77,14 @@ export function buildDescriptors(
         const ov = overlay[key] ?? {};
         const kind = ov.kind ?? kindForSchema(schemaEntry);
         const enumOptions = ov.enumOptions ?? schemaEntry.enum;
+        const prefix = categoryOf(key);
         result.push({
             key,
             label: ov.label ?? deriveLabel(key),
             description: ov.description,
             kind,
             enumOptions: kind === "dropdown" ? (enumOptions ?? []) : undefined,
-            category: categoryOf(key),
+            category: ov.group ?? PrefixGroupDefaults[prefix] ?? prefix,
             advanced: ov.advanced ?? false,
             order: ov.order ?? UNLISTED_CATEGORY_ORDER,
         });
