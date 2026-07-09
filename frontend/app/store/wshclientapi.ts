@@ -420,12 +420,6 @@ export class RpcApiType {
         return client.wshRpcCall("getbuilderstatus", data, opts);
     }
 
-    // command "getdefaultconfig" [call]
-    GetDefaultConfigCommand(client: WshClient, opts?: RpcOpts): Promise<MetaType> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getdefaultconfig", null, opts);
-        return client.wshRpcCall("getdefaultconfig", null, opts);
-    }
-
     // command "getfocusedblockdata" [call]
     GetFocusedBlockDataCommand(client: WshClient, opts?: RpcOpts): Promise<FocusedBlockData> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getfocusedblockdata", null, opts);

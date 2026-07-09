@@ -160,7 +160,6 @@ export class WaveConfigViewModel implements ViewModel {
     activeTabAtom: PrimitiveAtom<"visual" | "json">;
     settingsCategoryAtom: PrimitiveAtom<string>;
     settingsSearchAtom: PrimitiveAtom<string>;
-    settingsDefaultsAtom: PrimitiveAtom<Record<string, any>>;
     configErrorFilesAtom: Atom<Set<string>>;
     configDir: string;
     saveShortcut: string;
@@ -198,7 +197,6 @@ export class WaveConfigViewModel implements ViewModel {
         this.activeTabAtom = atom<"visual" | "json">("visual");
         this.settingsCategoryAtom = atom("appearance");
         this.settingsSearchAtom = atom("");
-        this.settingsDefaultsAtom = atom<Record<string, any>>({});
         this.configErrorFilesAtom = atom((get) => {
             const fullConfig = get(this.env.atoms.fullConfigAtom);
             const errorSet = new Set<string>();
@@ -219,7 +217,6 @@ export class WaveConfigViewModel implements ViewModel {
         this.storageBackendErrorAtom = atom<string | null>(null) as PrimitiveAtom<string | null>;
 
         this.checkPresetsJsonExists();
-        this.loadSettingsDefaults();
         this.initialize();
     }
 
@@ -436,15 +433,6 @@ export class WaveConfigViewModel implements ViewModel {
         globalStore.set(this.validationErrorAtom, null);
     }
 
-    async loadSettingsDefaults() {
-        try {
-            const defaults = await this.env.rpc.GetDefaultConfigCommand(TabRpcClient);
-            globalStore.set(this.settingsDefaultsAtom, defaults ?? {});
-        } catch (err) {
-            globalStore.set(this.errorMessageAtom, `Failed to load default settings: ${err.message || String(err)}`);
-        }
-    }
-
     async setSetting(key: string, value: any) {
         try {
             await this.env.rpc.SetConfigCommand(TabRpcClient, { [key]: value });
@@ -454,10 +442,8 @@ export class WaveConfigViewModel implements ViewModel {
     }
 
     async resetSetting(key: string) {
-        const defaults = globalStore.get(this.settingsDefaultsAtom);
         // Writing null deletes the user override; the resolved value falls back to the default.
-        const resetValue = key in defaults ? defaults[key] : null;
-        await this.setSetting(key, resetValue);
+        await this.setSetting(key, null);
     }
 
     async checkStorageBackend() {

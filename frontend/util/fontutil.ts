@@ -1,6 +1,9 @@
 // Copyright 2025, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+// Font sizes offered by both the terminal context menu (term-model.ts) and the settings UI.
+export const FONT_SIZE_PRESETS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+
 let isJetBrainsMonoLoaded = false;
 let isHackFontLoaded = false;
 let isHackNerdFontLoaded = false;

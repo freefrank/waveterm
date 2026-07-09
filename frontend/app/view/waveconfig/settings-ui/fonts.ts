@@ -1,8 +1,6 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// Mirrors the terminal's built-in font-size menu (term-model.ts) and default.
-export const FONT_SIZE_PRESETS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 export const DEFAULT_FONT_SIZE = 12;
 
 // Shown when queryLocalFonts is unavailable or the local-fonts permission is denied.

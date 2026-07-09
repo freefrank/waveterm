@@ -34,6 +34,7 @@ import {
     WOS,
 } from "@/store/global";
 import * as services from "@/store/services";
+import { FONT_SIZE_PRESETS } from "@/util/fontutil";
 import * as keyutil from "@/util/keyutil";
 import { isMacOS, isWindows } from "@/util/platformutil";
 import { boundNumber, fireAndForget, stringToBase64 } from "@/util/util";
@@ -1062,7 +1063,7 @@ export class TermViewModel implements ViewModel {
             },
         });
 
-        const fontSizeSubMenu: ContextMenuItem[] = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(
+        const fontSizeSubMenu: ContextMenuItem[] = FONT_SIZE_PRESETS.map(
             (fontSize: number) => {
                 return {
                     label: fontSize.toString() + "px",

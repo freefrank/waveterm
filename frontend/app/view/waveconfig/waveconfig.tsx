@@ -249,7 +249,13 @@ const WaveConfigView = memo(({ blockId, model }: ViewComponentProps<WaveConfigVi
                                     </button>
                                     {/* No guard needed: visual tab saves changes immediately via RPC */}
                                     <button
-                                        onClick={() => setActiveTab("json")}
+                                        onClick={() => {
+                                            if (activeTab === "json") return;
+                                            // The visual tab writes settings.json on the backend, so the cached
+                                            // content may be stale; re-read from disk before showing the editor.
+                                            model.loadFile(selectedFile);
+                                            setActiveTab("json");
+                                        }}
                                         className={cn(
                                             "px-4 pt-1 pb-1.5 cursor-pointer transition-colors text-secondary",
                                             activeTab === "json"

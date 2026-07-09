@@ -2,14 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Tooltip } from "@/app/element/tooltip";
-import {
-    DEFAULT_FONT_SIZE,
-    FONT_SIZE_PRESETS,
-    getAvailableFontFamilies,
-} from "@/app/view/waveconfig/settings-ui/fonts";
+import { DEFAULT_FONT_SIZE, getAvailableFontFamilies } from "@/app/view/waveconfig/settings-ui/fonts";
 import type { SettingDescriptor } from "@/app/view/waveconfig/settings-ui/settings-descriptors";
+import { FONT_SIZE_PRESETS } from "@/util/fontutil";
 import { cn } from "@/util/util";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+    autoUpdate,
+    FloatingPortal,
+    offset,
+    shift,
+    useDismiss,
+    useFloating,
+    useInteractions,
+} from "@floating-ui/react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 type ControlProps = {
     descriptor: SettingDescriptor;
@@ -72,12 +78,20 @@ const TextControl = memo(({ value, onChange }: ControlProps) => {
     useEffect(() => {
         setDraft(value == null ? "" : String(value));
     }, [value]);
+    const commit = () => {
+        const orig = value == null ? "" : String(value);
+        if (draft === orig) {
+            return;
+        }
+        // Clearing the field deletes the override (null) instead of writing an empty string.
+        onChange(draft === "" ? null : draft);
+    };
     return (
         <input
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => onChange(draft)}
+            onBlur={commit}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             className="w-56 px-2 py-1 rounded border border-border bg-background text-primary text-sm"
         />
@@ -113,7 +127,12 @@ const StringListControl = memo(({ value, onChange }: ControlProps) => {
             .split(",")
             .map((s) => s.trim())
             .filter((s) => s.length > 0);
-        onChange(parts);
+        const orig = Array.isArray(value) ? value : [];
+        if (parts.length === orig.length && parts.every((p, i) => p === orig[i])) {
+            return;
+        }
+        // Clearing the field deletes the override (null) instead of writing an empty list.
+        onChange(parts.length === 0 ? null : parts);
     };
     return (
         <input
@@ -154,26 +173,28 @@ const FontFamilyControl = memo(({ value, onChange }: ControlProps) => {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [families, setFamilies] = useState<string[]>([]);
-    const containerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (!open) {
-            return;
+    const setOpenAndReset = (next: boolean) => {
+        setOpen(next);
+        if (!next) {
+            setQuery("");
         }
-        const onDocMouseDown = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false);
-                setQuery("");
-            }
-        };
-        document.addEventListener("mousedown", onDocMouseDown);
-        return () => document.removeEventListener("mousedown", onDocMouseDown);
-    }, [open]);
+    };
+
+    const { refs, floatingStyles, context } = useFloating({
+        open,
+        onOpenChange: setOpenAndReset,
+        placement: "bottom-start",
+        middleware: [offset(4), shift({ padding: 8 })],
+        whileElementsMounted: autoUpdate,
+    });
+    const dismiss = useDismiss(context);
+    const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
     // queryLocalFonts requires transient user activation, so load within the click handler (not an effect).
     const toggleOpen = () => {
         const next = !open;
-        setOpen(next);
+        setOpenAndReset(next);
         if (next && families.length === 0) {
             getAvailableFontFamilies().then(setFamilies);
         }
@@ -189,17 +210,17 @@ const FontFamilyControl = memo(({ value, onChange }: ControlProps) => {
 
     const commit = (family: string) => {
         onChange(family);
-        setOpen(false);
-        setQuery("");
+        setOpenAndReset(false);
     };
 
     const display = value == null || value === "" ? "Default" : String(value);
 
     return (
-        <div ref={containerRef} className="relative w-56">
+        <>
             <button
-                onClick={toggleOpen}
-                className="w-full flex items-center justify-between px-2 py-1 rounded border border-border bg-background text-primary text-sm cursor-pointer"
+                ref={refs.setReference}
+                {...getReferenceProps({ onClick: toggleOpen })}
+                className="w-56 flex items-center justify-between px-2 py-1 rounded border border-border bg-background text-primary text-sm cursor-pointer"
             >
                 <span className="truncate" style={{ fontFamily: value || undefined }}>
                     {display}
@@ -207,51 +228,55 @@ const FontFamilyControl = memo(({ value, onChange }: ControlProps) => {
                 <i className="fa fa-chevron-down text-xs text-muted-foreground ml-2 shrink-0" />
             </button>
             {open && (
-                <div className="absolute z-20 mt-1 w-full rounded border border-border bg-background shadow-xl">
-                    <input
-                        autoFocus
-                        type="text"
-                        value={query}
-                        placeholder="Search fonts..."
-                        onChange={(e) => setQuery(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                if (filtered.length > 0) {
-                                    commit(filtered[0]);
-                                } else if (query.trim() !== "") {
-                                    commit(query.trim());
+                <FloatingPortal>
+                    <div
+                        ref={refs.setFloating}
+                        style={floatingStyles}
+                        {...getFloatingProps()}
+                        className="w-56 rounded border border-border bg-background shadow-xl z-50"
+                    >
+                        <input
+                            autoFocus
+                            type="text"
+                            value={query}
+                            placeholder="Search fonts..."
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    if (filtered.length > 0) {
+                                        commit(filtered[0]);
+                                    } else if (query.trim() !== "") {
+                                        commit(query.trim());
+                                    }
                                 }
-                            } else if (e.key === "Escape") {
-                                setOpen(false);
-                                setQuery("");
-                            }
-                        }}
-                        className="w-full px-2 py-1 border-b border-border bg-background text-primary text-sm"
-                    />
-                    <div className="max-h-56 overflow-y-auto">
-                        {filtered.length === 0 ? (
-                            <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                                {query.trim() ? `Press Enter to use "${query.trim()}"` : "No fonts"}
-                            </div>
-                        ) : (
-                            filtered.map((f) => (
-                                <div
-                                    key={f}
-                                    onClick={() => commit(f)}
-                                    className={cn(
-                                        "px-2 py-1 text-sm cursor-pointer truncate hover:bg-secondary/50",
-                                        f === value ? "bg-accentbg text-primary" : "text-secondary"
-                                    )}
-                                    style={{ fontFamily: f }}
-                                >
-                                    {f}
+                            }}
+                            className="w-full px-2 py-1 border-b border-border bg-background text-primary text-sm"
+                        />
+                        <div className="max-h-56 overflow-y-auto">
+                            {filtered.length === 0 ? (
+                                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                    {query.trim() ? `Press Enter to use "${query.trim()}"` : "No fonts"}
                                 </div>
-                            ))
-                        )}
+                            ) : (
+                                filtered.map((f) => (
+                                    <div
+                                        key={f}
+                                        onClick={() => commit(f)}
+                                        className={cn(
+                                            "px-2 py-1 text-sm cursor-pointer truncate hover:bg-secondary/50",
+                                            f === value ? "bg-accentbg text-primary" : "text-secondary"
+                                        )}
+                                        style={{ fontFamily: f }}
+                                    >
+                                        {f}
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
-                </div>
+                </FloatingPortal>
             )}
-        </div>
+        </>
     );
 });
 FontFamilyControl.displayName = "FontFamilyControl";

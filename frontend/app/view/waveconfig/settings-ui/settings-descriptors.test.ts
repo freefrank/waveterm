@@ -80,6 +80,15 @@ describe("buildDescriptors", () => {
         expect(d.kind).toBe("dropdown");
         expect(d.enumOptions).toEqual(["x", "y"]);
     });
+
+    it("infers dropdown from overlay enumOptions when the schema is a plain string", () => {
+        const descs = buildDescriptors(SCHEMA, {
+            "debug:rawkey": { enumOptions: ["block", "bar", "underline"] },
+        });
+        const d = descs.find((x) => x.key === "debug:rawkey");
+        expect(d.kind).toBe("dropdown");
+        expect(d.enumOptions).toEqual(["block", "bar", "underline"]);
+    });
 });
 
 describe("groupByCategory", () => {

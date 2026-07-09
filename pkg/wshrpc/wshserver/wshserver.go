@@ -564,14 +564,6 @@ func (ws *WshServer) GetFullConfigCommand(ctx context.Context) (wconfig.FullConf
 	return watcher.GetFullConfig(), nil
 }
 
-func (ws *WshServer) GetDefaultConfigCommand(ctx context.Context) (waveobj.MetaMapType, error) {
-	defaults, cerrs := wconfig.ReadDefaultsConfigFile(wconfig.SettingsFile)
-	if len(cerrs) > 0 {
-		return nil, fmt.Errorf("error reading default settings: %v", cerrs[0])
-	}
-	return defaults, nil
-}
-
 func (ws *WshServer) GetWaveAIModeConfigCommand(ctx context.Context) (wconfig.AIModeConfigUpdate, error) {
 	fullConfig := wconfig.GetWatcher().GetFullConfig()
 	resolvedConfigs := aiusechat.ComputeResolvedAIModeConfigs(fullConfig)

@@ -17,16 +17,17 @@ import {
 import { cn } from "@/util/util";
 import { useAtom, useAtomValue } from "jotai";
 import { memo, useMemo } from "react";
+import defaultSettings from "../../../../../pkg/wconfig/defaultconfig/settings.json";
 import settingsSchema from "../../../../../schema/settings.json";
 
 const SCHEMA_PROPS = (settingsSchema as any).$defs.SettingsType.properties as SchemaProps;
+const SETTINGS_DEFAULTS = defaultSettings as Record<string, any>;
 const ALL_DESCRIPTORS = buildDescriptors(SCHEMA_PROPS, SettingsOverlay);
 const GROUPS = groupByCategory(ALL_DESCRIPTORS);
 
 const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
     const env = useWaveEnv<WaveConfigEnv>();
     const fullConfig = useAtomValue(env.atoms.fullConfigAtom);
-    const defaults = useAtomValue(model.settingsDefaultsAtom);
     const category = useAtomValue(model.settingsCategoryAtom);
     const search = useAtomValue(model.settingsSearchAtom);
 
@@ -49,7 +50,7 @@ const SettingsPanel = memo(({ model }: { model: WaveConfigViewModel }) => {
             key={desc.key}
             descriptor={desc}
             value={settings[desc.key]}
-            modified={isModified(desc.key, settings[desc.key], defaults)}
+            modified={isModified(desc.key, settings[desc.key], SETTINGS_DEFAULTS)}
             onChange={(v) => model.setSetting(desc.key, v)}
             onReset={() => model.resetSetting(desc.key)}
         />

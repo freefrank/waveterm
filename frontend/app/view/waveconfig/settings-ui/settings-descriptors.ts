@@ -75,7 +75,9 @@ export function buildDescriptors(
         }
         const schemaEntry = schemaProps[key] ?? {};
         const ov = overlay[key] ?? {};
-        const kind = ov.kind ?? kindForSchema(schemaEntry);
+        // Overlay enumOptions imply a dropdown even when the schema declares a plain string,
+        // otherwise the curated options would be silently discarded.
+        const kind = ov.kind ?? (ov.enumOptions?.length ? "dropdown" : kindForSchema(schemaEntry));
         const enumOptions = ov.enumOptions ?? schemaEntry.enum;
         const prefix = categoryOf(key);
         result.push({
@@ -122,7 +124,7 @@ export function groupByCategory(descriptors: SettingDescriptor[]): CategoryGroup
 }
 
 export function isModified(key: string, currentValue: any, defaults: Record<string, any>): boolean {
-    if (currentValue === undefined) {
+    if (currentValue == null) {
         return false;
     }
     return JSON.stringify(currentValue) !== JSON.stringify(defaults?.[key]);
