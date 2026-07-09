@@ -52,6 +52,7 @@ const TermCacheFileName = "cache:term:full";
 const MinDataProcessedForCache = 100 * 1024;
 export const SupportsImageInput = true;
 const MaxRepaintTransactionMs = 2000;
+const ClearAtlasMinHiddenMs = 30 * 1000;
 
 // detect webgl support
 function detectWebGLSupport(): boolean {
@@ -320,6 +321,28 @@ export class TermWrap {
         this.toDispose.push({
             dispose: () => {
                 this.connectElem.removeEventListener("paste", pasteHandler, true);
+            },
+        });
+        // The GPU can silently reclaim the WebGL glyph texture atlas of a long-hidden
+        // webContents (tab switched away, sleep/wake) WITHOUT firing webglcontextlost,
+        // so the onContextLoss DOM fallback never triggers and glyphs render garbled
+        // until something forces a re-render (e.g. a resize). Rebuild the atlas when the
+        // document becomes visible again; the hidden-duration threshold keeps rapid tab
+        // switching at zero added cost.
+        let hiddenAt = 0;
+        const visibilityHandler = () => {
+            if (document.visibilityState === "hidden") {
+                hiddenAt = Date.now();
+                return;
+            }
+            if (this.webglAddon != null && hiddenAt > 0 && Date.now() - hiddenAt >= ClearAtlasMinHiddenMs) {
+                this.terminal.clearTextureAtlas();
+            }
+        };
+        document.addEventListener("visibilitychange", visibilityHandler);
+        this.toDispose.push({
+            dispose: () => {
+                document.removeEventListener("visibilitychange", visibilityHandler);
             },
         });
     }
