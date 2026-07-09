@@ -6,6 +6,7 @@ import { loadMonaco } from "@/app/monaco/monaco-env";
 import { loadBadges } from "@/app/store/badge";
 import { GlobalModel } from "@/app/store/global-model";
 import {
+    globalRefocus,
     registerBuilderGlobalKeys,
     registerControlShiftStateUpdateHandler,
     registerElectronReinjectKeyHandler,
@@ -35,9 +36,12 @@ import { isMacOS, setMacOSVersion } from "@/util/platformutil";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 
+const ResyncMinIntervalMs = 30000;
+
 const platform = getApi().getPlatform();
 document.title = `Wave Terminal`;
 let savedInitOpts: WaveInitOpts = null;
+let lastResyncTime = 0;
 
 (window as any).WOS = WOS;
 (window as any).globalStore = globalStore;
@@ -117,6 +121,29 @@ async function reinitWave() {
     getApi().setWindowInitStatus("wave-ready");
     globalStore.set(atoms.reinitVersion, globalStore.get(atoms.reinitVersion) + 1);
     globalStore.set(atoms.updaterStatusAtom, getApi().getUpdaterStatus());
+    // WPS events can be missed while hidden (e.g. across a websocket reconnect) and there is no
+    // resync-on-reconnect, so repair the cache in the background — throttled and off the critical
+    // path to keep rapid tab switching cheap.
+    if (Date.now() - lastResyncTime > ResyncMinIntervalMs) {
+        lastResyncTime = Date.now();
+        resyncWorkspaceObjects();
+    }
+    setTimeout(() => {
+        globalRefocus();
+    }, 50);
+}
+
+async function resyncWorkspaceObjects() {
+    try {
+        await WOS.reloadWaveObject<Client>(WOS.makeORef("client", savedInitOpts.clientId));
+        const waveWindow = await WOS.reloadWaveObject<WaveWindow>(WOS.makeORef("window", savedInitOpts.windowId));
+        const ws = await WOS.reloadWaveObject<Workspace>(WOS.makeORef("workspace", waveWindow.workspaceid));
+        ws?.tabids?.forEach((tabid) => {
+            WOS.reloadWaveObject<Tab>(WOS.makeORef("tab", tabid));
+        });
+    } catch (e) {
+        console.error("Error resyncing workspace objects", e);
+    }
 }
 
 function loadAllWorkspaceTabs(ws: Workspace) {

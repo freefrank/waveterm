@@ -126,7 +126,6 @@ type FloatingWindowPropsType = {
     isOpen: boolean;
     onClose: () => void;
     referenceElement: HTMLElement;
-    hasConfigErrors?: boolean;
 };
 
 const AppsFloatingWindow = memo(({ isOpen, onClose, referenceElement }: FloatingWindowPropsType) => {
@@ -270,7 +269,6 @@ const Widgets = memo(() => {
 
     const [isAppsOpen, setIsAppsOpen] = useState(false);
     const appsButtonRef = useRef<HTMLDivElement>(null);
-    const settingsButtonRef = useRef<HTMLDivElement>(null);
 
     const checkModeNeeded = useCallback(() => {
         if (!containerRef.current || !measurementRef.current) return;
@@ -372,7 +370,6 @@ const Widgets = memo(() => {
                                 </div>
                             ) : null}
                             <div
-                                ref={settingsButtonRef}
                                 className="flex flex-col justify-center items-center w-full py-1.5 pr-0.5 text-secondary text-sm overflow-hidden rounded-sm hover:bg-hoverbg hover:text-white cursor-pointer"
                                 onClick={handleOpenSettings}
                             >
@@ -417,7 +414,6 @@ const Widgets = memo(() => {
                             </div>
                         ) : null}
                         <div
-                            ref={settingsButtonRef}
                             className="flex flex-col justify-center items-center w-full py-1.5 pr-0.5 text-secondary text-lg overflow-hidden rounded-sm hover:bg-hoverbg hover:text-white cursor-pointer"
                             onClick={handleOpenSettings}
                         >
