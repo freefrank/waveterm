@@ -378,6 +378,13 @@ async function appMain() {
         console.log("disabling hardware acceleration, per launch settings");
         electronApp.disableHardwareAcceleration();
     }
+    // Local crash dumps only (no upload) so renderer/GPU crashes leave a minidump
+    // with the crashing module — without this, a dead tab has zero forensics.
+    electron.crashReporter.start({ uploadToServer: false });
+    console.log("crash dumps dir:", electronApp.getPath("crashDumps"));
+    electronApp.on("child-process-gone", (_event, details) => {
+        console.log("child-process-gone", JSON.stringify(details));
+    });
     const startTs = Date.now();
     const instanceLock = electronApp.requestSingleInstanceLock();
     if (!instanceLock) {

@@ -322,6 +322,18 @@ export async function getOrCreateWebViewForTab(waveWindowId: string, tabId: stri
             tabView.webContents.send("webview-new-window", wc.id, details);
             return { action: "deny" };
         });
+        wc.on("render-process-gone", (_e, details) => {
+            console.log("render-process-gone (webview)", tabId, JSON.stringify(details));
+        });
+    });
+    tabView.webContents.on("render-process-gone", (_e, details) => {
+        console.log("render-process-gone (tab)", tabId, JSON.stringify(details));
+        if (details.reason === "clean-exit" || details.reason === "killed") {
+            return;
+        }
+        // Auto-recover instead of leaving a dead view: when the reloaded page reports
+        // "ready", the set-window-init-status handler re-sends wave-init with savedInitOpts.
+        tabView.webContents.reload();
     });
     tabView.webContents.on("before-input-event", (e, input) => {
         const waveEvent = adaptFromElectronKeyEvent(input);
